@@ -1,0 +1,55 @@
+@startuml C4_Containers_Migration_Phase1
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+Person(user, "User", "Cinema customer")
+
+System_Boundary(cinema_abyss, "CinemaAbyss System (Migration - Phase 1)") {
+    Container(spa, "Web App (SPA)", "JavaScript, React", "Client interface.")
+    Container(mobile_app, "Mobile App", "React Native", "Client interface.")
+    
+    Container(api_gateway, "API Gateway", "Go", "Single entry point. Routes movie traffic to new service.")
+    
+    Container(movies_service, "Movies Service", "Go", "Manages movie metadata, ratings, and genres.")
+    ContainerDb(movies_db, "Movies DB", "PostgreSQL", "Stores movie information.")
+    
+    Container(events_service, "Events Service", "Go", "Subscribes to events for notifications.")
+    Container(kafka, "Message Broker", "Kafka", "Transport for asynchronous events.")
+    
+    Container(monolith, "Legacy Monolith", "Go", "Handles Users, Billing, and all other legacy logic.")
+    ContainerDb(monolith_db, "Monolith DB", "PostgreSQL", "The original database for all domains.")
+}
+
+System_Ext(notification_service, "Notification Service", "External", "Sends emails and push notifications.")
+System_Ext(payment_system, "Payment System", "External", "Processes payments.")
+System_Ext(recommendation_system, "Recommendation System", "External", "Provides movie recommendations.")
+
+Rel(user, spa, "Uses", "HTTPS")
+Rel(user, mobile_app, "Uses")
+
+Rel(spa, api_gateway, "Calls API", "HTTPS/REST")
+Rel(mobile_app, api_gateway, "Calls API", "HTTPS/REST")
+
+' Traffic Routing
+Rel(api_gateway, movies_service, "Routes '/api/movies' traffic to", "HTTPS/REST")
+Rel(api_gateway, monolith, "Routes all other traffic to", "HTTPS/REST")
+
+' Data and Service Dependencies
+Rel(movies_service, movies_db, "Reads/Writes", "SQL/JDBC")
+Rel(monolith, monolith_db, "Reads/Writes", "SQL/JDBC")
+Rel(movies_service, monolith, "Gets user/subscription data from", "HTTPS/REST") ' Sync API call to monolith
+
+' Asynchronous Flows
+Rel(movies_service, kafka, "Publishes 'MovieRated' event", "Async, Kafka Topic")
+Rel(events_service, kafka, "Subscribes to events", "Async, Kafka Topic")
+Rel(events_service, notification_service, "Triggers notifications via", "HTTPS/REST")
+
+' Monolith's External Dependencies
+Rel(monolith, payment_system, "Processes payments via", "HTTPS/REST")
+Rel(monolith, recommendation_system, "Gets recommendations via", "HTTPS/REST")
+
+' Data for the Movies Service is handled by a separate, one-time migration process.
+' The API Gateway is only responsible for routing traffic.
+
+@enduml

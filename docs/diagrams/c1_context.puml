@@ -1,0 +1,18 @@
+@startuml C4_Context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+LAYOUT_WITH_LEGEND()
+
+Person(user, "User", "Cinema customer")
+Person(admin, "Administrator", "Manages the system content and users")
+System(cinema_abyss, "CinemaAbyss", "Online cinema platform")
+
+System_Ext(recommendation_system, "Recommendation System", "Provides movie recommendations")
+System_Ext(payment_system, "Payment Gateway", "Handles subscription payments")
+
+Rel(user, cinema_abyss, "Views movies, manages subscription, authenticates")
+Rel(admin, cinema_abyss, "Manages content and users via Admin Panel")
+
+Rel(cinema_abyss, recommendation_system, "Requests recommendations", "HTTPS/REST")
+Rel(cinema_abyss, payment_system, "Processes payments", "HTTPS/REST")
+@enduml
