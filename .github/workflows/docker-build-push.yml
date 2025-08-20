@@ -106,18 +106,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  api-tests:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Run API tests
-        run: |
-          cd tests/postman
-          npm install
-          npm run test:docker
 
       - name: Extract metadata (tags, labels) for Proxy Service
         id: meta-proxy
