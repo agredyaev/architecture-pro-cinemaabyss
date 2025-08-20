@@ -22,15 +22,15 @@ spec:
         - name: PORT
           valueFrom:
             configMapKeyRef:
-              name: app-config
+              name: cinemaabyss-config
               key: EVENTS_SERVICE_PORT
         - name: KAFKA_BROKER
           valueFrom:
             configMapKeyRef:
-              name: app-config
+              name: cinemaabyss-config
               key: KAFKA_BROKER
       imagePullSecrets:
-      - name: dockerconfigsecret
+      - name: dockerconfigjson
 
 ---
 apiVersion: v1

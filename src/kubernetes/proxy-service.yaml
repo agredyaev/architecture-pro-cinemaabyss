@@ -22,35 +22,35 @@ spec:
         - name: PORT
           valueFrom:
             configMapKeyRef:
-              name: app-config
+              name: cinemaabyss-config
               key: PROXY_SERVICE_PORT
         - name: MONOLITH_URL
           valueFrom:
             configMapKeyRef:
-              name: app-config
+              name: cinemaabyss-config
               key: MONOLITH_URL
         - name: MOVIES_SERVICE_URL
           valueFrom:
             configMapKeyRef:
-              name: app-config
+              name: cinemaabyss-config
               key: MOVIES_SERVICE_URL
         - name: EVENTS_SERVICE_URL
           valueFrom:
             configMapKeyRef:
-              name: app-config
+              name: cinemaabyss-config
               key: EVENTS_SERVICE_URL
         - name: GRADUAL_MIGRATION
           valueFrom:
             configMapKeyRef:
-              name: app-config
+              name: cinemaabyss-config
               key: GRADUAL_MIGRATION
         - name: MOVIES_MIGRATION_PERCENT
           valueFrom:
             configMapKeyRef:
-              name: app-config
+              name: cinemaabyss-config
               key: MOVIES_MIGRATION_PERCENT
       imagePullSecrets:
-      - name: dockerconfigsecret
+      - name: dockerconfigjson
 
 ---
 apiVersion: v1
