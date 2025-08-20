@@ -33,9 +33,13 @@
 *   Каждый микросервис будет владеть собственной базой данных для обеспечения полной независимости (Database per Service).
 
 ## 3. Визуализация (C4)
+### Контекст 
+--------
+![Контекст](./../diagrams/img/C4_Context.png)
 
-*Исходный код: [c2_containers_final.puml](./../diagrams/c2_containers_final.puml)*
-![Целевая архитектура](./../diagrams/c2_containers_final.puml)
+### Целевая архитектура
+--------
+![Целевая архитектура](./../diagrams/img/C4_Containers_Final.png)
 
 ## 4. Последствия и риски
 

@@ -26,7 +26,12 @@
 
 ## 3. Визуализация (C4)
 
-*Исходный код: [c2_containers.puml](./../diagrams/c2_containers.puml)*![Гибридная архитектура (Этап 1)](./../diagrams/img/C4_Containers_Migration_Phase1.png)
+### Компоненты
+-------
+![Компоненты](./../diagrams/img/C3_Movies_Service_Components.png)
+
+### Гибридная архитектура (Этап 1)
+![Гибридная архитектура (Этап 1)](./../diagrams/img/C4_Containers_Migration_Phase1.png)
 
 ## 4. Последствия и риски
 

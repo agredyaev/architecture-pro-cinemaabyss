@@ -45,7 +45,12 @@
    ```bash
    curl http://localhost:8000/api/movies
    ```
-- Протестируйте постепенный переход, изменив переменную окружения MOVIES_MIGRATION_PERCENT в файле docker-compose.yml.
+- Протестируйте постепенный переход, изменив переменную окружения MOVIES_MIGRATION_PERCENT в файле docker-compose.yml. 
+
+Для этого можно воспользоваться командой:
+  ```bash
+  make test-migration
+  ```
 
 ### 2. Kafka
  Вам как архитектуру нужно также проверить гипотезу насколько просто реализовать применение Kafka в данной архитектуре.
@@ -57,7 +62,17 @@
     - Добавьте в docker-compose новый сервис, kafka там уже есть
 
 Необходимые тесты для проверки этого API вызываются при запуске npm run test:local из папки tests/postman 
-Приложите скриншот тестов и скриншот состояния топиков Kafka http://localhost:8090 
+Приложите скриншот тестов и скриншот состояния топиков Kafka http://localhost:8090
+
+Для генерации тестовых событий можно воспользоваться командой:
+  ```bash
+  make publish-events
+  ```
+
+**Артефакты:**
+
+*   [Скриншот Kafka UI](docs/artifacts/img/Screenshot%20From%202025-08-20%2019-54-56.png)
+*   [Скриншот тестов Postman](docs/artifacts/img/Screenshot%20From%202025-08-20%2020-14-05.png)
 
 
 ## Задание 3
