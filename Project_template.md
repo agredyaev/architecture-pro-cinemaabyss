@@ -446,3 +446,7 @@ kubectl delete namespace istio-system
 kubectl delete all --all -n cinemaabyss
 kubectl delete namespace cinemaabyss
 ```
+**Артефакты:**
+
+![Скриншот1 circuit breaker'а](docs/artifacts/img/Screenshot%20From%202025-08-21%2022-34-23.png)
+![Скриншот1 circuit breaker'а](docs/artifacts/img/Screenshot%20From%202025-08-21%2022-34-41.png)
