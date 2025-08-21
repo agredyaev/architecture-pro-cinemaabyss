@@ -56,3 +56,17 @@ k8s-delete:
 	@echo "--- Deleting CinemaAbyss from Kubernetes ---"
 	kubectl delete namespace cinemaabyss
 	@echo "--- Deletion finished ---"
+
+# ====================================================================================
+# Helm Targets
+# ====================================================================================
+
+helm-install:
+	@echo "--- Deploying CinemaAbyss to Kubernetes using Helm ---"
+	helm upgrade --install cinemaabyss ./src/kubernetes/helm -n cinemaabyss --create-namespace
+	@echo "--- Deployment finished ---"
+
+helm-delete:
+	@echo "--- Deleting CinemaAbyss from Kubernetes using Helm ---"
+	helm delete cinemaabyss -n cinemaabyss
+	@echo "--- Deletion finished ---"

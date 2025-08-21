@@ -1,0 +1,6 @@
+{{- range .Values.services }}
+  {{- if .enabled }}
+---
+    {{- include "cinemaabyss.service.tpl" (dict "root" $ "service" .) | nindent 0 }}
+  {{- end }}
+{{- end }}

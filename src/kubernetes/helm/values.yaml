@@ -2,17 +2,22 @@
 global:
   namespace: cinemaabyss
   domain: cinemaabyss.example.com
+  image:
+    registry: ghcr.io/agredyaev/architecture-pro-cinemaabyss
 
 # Image pull secrets
 imagePullSecrets:
-  dockerconfigjson: ewoJImF1dGhzIjogewoJCSJnaGNyLmlvIjogewoJCQkiYXV0aCI6
+  name: dockerconfigjson
+  username: agredyaev
+  password: "" # Enter your PAT here
+
 # Database configuration
 database:
   host: postgres
   port: 5432
   name: cinemaabyss
   user: postgres
-  password: cG9zdGdyZXNfcGFzc3dvcmQ=
+  password: postgres
   image:
     repository: postgres
     tag: 14
@@ -29,89 +34,122 @@ database:
     size: 10Gi
     accessMode: ReadWriteOnce
 
-# Monolith configuration
-monolith:
-  enabled: true
-  image:
-    repository: ghcr.io/db-exp/cinemaabysstest/monolith
-    tag: latest
-    pullPolicy: Always
-  replicas: 1
-  resources:
-    limits:
-      cpu: 500m
-      memory: 512Mi
-    requests:
-      cpu: 100m
-      memory: 128Mi
-  service:
-    port: 8080
-    targetPort: 8080
-    type: ClusterIP
+# Application services configuration
+services:
+  monolith:
+    name: monolith
+    enabled: true
+    image:
+      repository: monolith
+      tag: latest
+      pullPolicy: Always
+    replicas: 1
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+    service:
+      port: 8080
+      targetPort: 8080
+      type: ClusterIP
+    env:
+      PORT: "8080"
+      DB_CONNECTION_STRING: "postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable"
 
-# Proxy service configuration
-proxyService:
-  enabled: true
-  image:
-    repository: ghcr.io/db-exp/cinemaabysstest/proxy-service
-    tag: latest
-    pullPolicy: Always
-  replicas: 1
-  resources:
-    limits:
-      cpu: 300m
-      memory: 256Mi
-    requests:
-      cpu: 100m
-      memory: 128Mi
-  service:
-    port: 80
-    targetPort: 8000
-    type: ClusterIP
+  proxy:
+    name: proxy-service
+    enabled: true
+    image:
+      repository: proxy-service
+      tag: latest
+      pullPolicy: Always
+    replicas: 1
+    resources:
+      limits:
+        cpu: 300m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+    service:
+      port: 80
+      targetPort: 8000
+      type: ClusterIP
+    env:
+      PORT: "8000"
+      MONOLITH_URL:
+        configMapKeyRef:
+          name: '{{ .Release.Name }}-config'
+          key: MONOLITH_URL
+      MOVIES_SERVICE_URL:
+        configMapKeyRef:
+          name: '{{ .Release.Name }}-config'
+          key: MOVIES_SERVICE_URL
+      EVENTS_SERVICE_URL:
+        configMapKeyRef:
+          name: '{{ .Release.Name }}-config'
+          key: EVENTS_SERVICE_URL
+      GRADUAL_MIGRATION:
+        configMapKeyRef:
+          name: '{{ .Release.Name }}-config'
+          key: GRADUAL_MIGRATION
+      MOVIES_MIGRATION_PERCENT:
+        configMapKeyRef:
+          name: '{{ .Release.Name }}-config'
+          key: MOVIES_MIGRATION_PERCENT
 
-# Movies service configuration
-moviesService:
-  enabled: true
-  image:
-    repository: ghcr.io/db-exp/cinemaabysstest/movies-service
-    tag: latest
-    pullPolicy: Always
-  replicas: 1
-  resources:
-    limits:
-      cpu: 300m
-      memory: 256Mi
-    requests:
-      cpu: 100m
-      memory: 128Mi
-  service:
-    port: 8081
-    targetPort: 8081
-    type: ClusterIP
+  movies:
+    name: movies-service
+    enabled: true
+    image:
+      repository: movies-service
+      tag: latest
+      pullPolicy: Always
+    replicas: 1
+    resources:
+      limits:
+        cpu: 300m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+    service:
+      port: 8081
+      targetPort: 8081
+      type: ClusterIP
+    env:
+      PORT: "8081"
+      DB_CONNECTION_STRING: "postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable"
 
-# Events service configuration
-eventsService:
-  enabled: true
-  image:
-    repository: ghcr.io/db-exp/cinemaabysstest/events-service
-    tag: latest
-    pullPolicy: Always
-  replicas: 1
-  resources:
-    limits:
-      cpu: 300m
-      memory: 256Mi
-    requests:
-      cpu: 100m
-      memory: 128Mi
-  service:
-    port: 8082
-    targetPort: 8082
-    type: ClusterIP
+  events:
+    name: events-service
+    enabled: true
+    image:
+      repository: events-service
+      tag: latest
+      pullPolicy: Always
+    replicas: 1
+    resources:
+      limits:
+        cpu: 300m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+    service:
+      port: 8082
+      targetPort: 8082
+      type: ClusterIP
+    env:
+      PORT: "8082"
 
 # Kafka configuration
 kafka:
   enabled: true
+  broker: "kafka:9092"
   image:
     repository: wurstmeister/kafka
     tag: 2.13-2.7.0
