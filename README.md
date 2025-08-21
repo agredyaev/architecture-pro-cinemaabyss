@@ -1,253 +1,52 @@
-# Архитектура микросервисов CinemaAbyss
+# CinemaAbyss: From Monolith to Microservices
 
-## Обзор.
+[![CI Pipeline](https://github.com/arch-course/architecture-pro-cinemaabyss/actions/workflows/docker-build-push.yml/badge.svg)](https://github.com/arch-course/architecture-pro-cinemaabyss/actions/workflows/docker-build-push.yml)
 
-О компании
-Небольшой стартап «Кинобездна» пять лет назад организовал стриминговый сервис, где пользователи могут посмотреть контент из других сервисов и открытых источников по единой подписке.
-Стартап вырос и превратился в крупный онлайн-кинотеатр — агрегатор. Кратно выросло количество пользователей и различных интеграций с сервисами лояльности, маркетплейсами, платёжными системами и так далее.
-1. Текущее решение
-Большой и запутанный монолит на Go c СУБД PostgreSQL.
-Одна база данных.
-Сущности в базе: платежи, пользователи, видео, подписки, скидки, метаданные о фильмах (жанры, актёры, оценки).
-Все вызовы за исключением взаимодействия с рекомендательной системой сейчас происходят синхронно. Пользователь открывает сайт, аутентифицируется, выбирает фильм, может оценить фильм и составить папку с избранным.
-Сторонняя рекомендательная система делает подборку.
-API компании построено в соответствии с REST-стилем.
-Клиенты сервиса используют мобильные устройства, ноутбуки, смарт ТВ. Как следствие, на разных девайсах различаются интерфейсы и количество данных.
+![Go](https://img.shields.io/badge/go-%2300ADD8.svg?style=for-the-badge&logo=go&logoColor=white)![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)![Kubernetes](https://img.shields.io/badge/kubernetes-%23326ce5.svg?style=for-the-badge&logo=kubernetes&logoColor=white)![Helm](https://img.shields.io/badge/helm-%230f1689.svg?style=for-the-badge&logo=helm&logoColor=white)![Kafka](https://img.shields.io/badge/Apache%20Kafka-000?style=for-the-badge&logo=apachekafka)![Istio](https://img.shields.io/badge/Istio-466BB0?style=for-the-badge&logo=istio&logoColor=white)
 
-2. Целевая экосистема, которую необходимо создать
-Компании нужно повысить надёжность и улучшить масштабируемость системы за счёт использования Kubernetes и его возможностей оркестрации.
-Для оперативного внесения изменений нужно разделить кодовую базу и домены путём выделения микросервисов из монолита.
-Для быстроты доставки приложения в продакшн необходимо внедрить и настроить CI/CD-процесс.
-Переход должен произойти без простоя и незаметно для пользователей.
-3. Лэндскейп компании
-Над проектом работают:
-Команда разработчиков. В ней пять человек, специализирующихся на Go. Разработчики будут работать над рефакторингом и разделением монолита на микросервисы.
-Команда DevOps. Два человека, которые будут настраивать CI/CD-пайплайны, контейнеризацию и оркестрацию.
-Команда QA. В ней два человека. Они будут проводить тестирование новой системы.
-Команда по продажам и маркетингу. В команде пять человек, она будет заниматься продвижением кинотеатра.
-4. Цели бизнеса
-Состояние через пару месяцев:
-Описана As-Is и To-Be архитектура решения. Создан план по переходу к целевой системе.
-Вынесен микросервис, отвечающий за метаданные. Вся система перенесена в Kubernetes с использованием Helm.
-Сделано MVP с использованием Kafka для дальнейшего развития.
-Настроены CI/CD-пайплайны.
+This project showcases the complete architectural journey of migrating a monolithic application to a modern, cloud-native microservices architecture.
 
- В проекте реализована следующая функциональность:
+## Implemented Features & Patterns
 
-- Извлечение микросервисов с использованием паттерна Strangler Fig
-- Развертывание в Kubernetes для оркестрации и масштабирования
-- API Gateway для унифицированного доступа к сервисам
-- Архитектура, управляемая событиями, с использованием Kafka
-- CI/CD Pipeline с GitHub Actions
+-   **Strangler Fig Migration:** A `Proxy` service was developed to intercept traffic, routing `/api/movies` requests to the new `Movies` service while forwarding all other requests to the legacy monolith, enabling a zero-downtime migration.
+-   **Event-Driven Core:** An `Events` service and **Apache Kafka** topics were introduced to process `Movie`, `User`, and `Payment` events asynchronously, decoupling services.
+-   **Kubernetes Orchestration:** All application components (services, databases, Kafka) are fully containerized with **Docker** and deployed declaratively via Kubernetes manifests.
+-   **Helm Release Management:** A comprehensive **Helm chart** was created to manage the entire application stack as a single, versioned, and configurable release, simplifying environment setup and updates.
+-   **Automated CI/CD:** A **GitHub Actions** workflow (`docker-build-push.yml`) automatically builds, runs tests, and pushes versioned Docker images to the container registry on every commit to the `main` branch.
+-   **Circuit Breaker Resilience:** **Istio** was deployed as a service mesh, and a `DestinationRule` was configured to apply a Circuit Breaker to the `movies-service`. This prevents cascading failures by limiting concurrent connections and ejecting unhealthy pods from the load balancing pool.
 
-## Компоненты
+## Target Architecture
 
-### Монолит
-Исходное монолитное приложение обрабатывает:
+![Target Architecture Diagram](docs/diagrams/img/C4_Containers_Final.png)
 
-- Управление пользователями
-- Метаданные фильмов
-- Платежи
-- Подписки
+## Quick Start
 
-Сервис расположен в src/monolith/.
+All deployment and testing commands are streamlined using the `Makefile`.
 
-### Микросервисы
+### Local Development (Docker Compose)
 
-#### Movies Service
-Извлечен из монолита, обрабатывает всю функциональность, связанную с фильмами:
+1.  **Start all services:**
+    ```bash
+    make up
+    ```
+2.  **Run API tests:**
+    ```bash
+    make test
+    ```
+3.  **Stop all services:**
+    ```bash
+    make down
+    ```
 
-- Метаданные фильмов
-- Рейтинги
-- Жанры
+### Kubernetes Deployment (Helm)
 
-Расположен в src/microservices/movies/.
+1.  **Deploy to Kubernetes:**
+    ```bash
+    make helm-install
+    ```
+2.  **Delete from Kubernetes:**
+    ```bash
+    make helm-delete
+    ```
 
-#### Events Service
-Обрабатывает коммуникацию между сервисами на основе событий с использованием Kafka:
-
-- События фильмов (просмотр, оценка, добавление)
-- События пользователей (регистрация, вход)
-- События платежей (успешные, неудачные)
-
-Расположен в src/microservices/events/.
-
-#### Proxy Service (API Gateway)
-Реализует функционал для постепенного перехода от монолита к микросервисам:
-
-- Маршрутизация запросов между монолитом и микросервисами
-- Поддержка постепенного перехода с процентной маршрутизацией
-- Действует как фасад для всей системы
-
-Расположен в src/microservices/proxy/.
-
-## Инфраструктура
-
-### Kubernetes
-Манифесты Kubernetes для развертывания всех компонентов расположены в src/kubernetes/.
-
-### Helm Charts
-Charts Helm для упрощения развертывания и управления:
-
-Расположены в src/kubernetes/helm/cinemaabyss/.
-
-### Kafka
-Расположено в src/kubernetes/kafka/.
-
-### CI/CD Pipeline
-GitHub Actions для непрерывной интеграции и развертывания:
-
-- Сборка и тестирование микросервисов
-- Сборка и выгрузка Docker-образов
-
-Расположены в .github/workflows/.
-
-
-## Детали реализации
-
-#### Паттерн Strangler Fig
-
-Реализован через proxy-сервис, который выступает в роли фасада перед монолитом и микросервисами. Он маршрутизирует трафик на основе конфигурации:
-
-- При включенном фиче-флаге маршрутизирует определенный процент трафика в микросервис
-- При отключенном маршрутизирует весь трафик для определенного домена в соответствующий микросервис
-
-Это позволяет осуществлять контролируемый постепенный переход без нарушения работы пользователей.
-
-## Deployment Instructions
-
-### Local Development with Docker Compose
-
-1. Необходимо, чтобы был установлен docker и docker-compose
-
-2. Запускаем сервисы с помощью Docker Compose:
-   ```bash
-   docker-compose up -d
-   ```
-
-После запуска сервисы доступны:
-- Monolith: http://localhost:8080
-- Movies Service: http://localhost:8081
-- Events Service: http://localhost:8082
-- API Gateway (Proxy): http://localhost:8000
-- Kafka UI: http://localhost:8090
-
-3. Останавливаем сервисы:
-   ```bash
-   docker-compose down -v
-   ```
-
-4. После внесения изменений рестартим:
-
-   ```bash
-   docker-compose build
-   docker-compose up -d
-   ```
-
-### Kubernetes Deployment
-
-#### Требования
-
-- Kubernetes cluster (v1.19+)
-- Helm (v3.2.0+)
-- kubectl
-
-#### Развертывание
-
-1. Создайте namespace:
-```bash
-kubectl apply -f src/kubernetes/namespace.yaml
-```
-2. Разверните Kafka:
-```bash
-kubectl apply -f src/kubernetes/kafka/kafka.yaml
-```
-3. Разверните базу данных:
-```bash
-kubectl apply -f src/kubernetes/postgres.yaml
-```
-4. Разверните монолит:
-```bash
-kubectl apply -f src/kubernetes/monolith.yaml
-```
-5.Разверните микросервисы:
-```bash
-kubectl apply -f src/kubernetes/movies-service.yaml
-kubectl apply -f src/kubernetes/events-service.yaml
-```
-6. Разверните прокси-сервис:
-```bash
-kubectl apply -f src/kubernetes/proxy-service.yaml
-```
-
-### Развертывание через CI/CD
-Проект включает GitHub Actions для CI/CD:
-
-- Сборка и тестирование: Автоматически собирает и тестирует код при пуше или пул-реквесте.
-- Сборка Docker и выгрузка: Создает Docker-образы и выгружает их в GitHub Container Registry.
-
-Чтобы использовать пайплайн CI/CD:
-
-1. Создайте форк или клонируйте этот репозиторий в свой аккаунт GitHub.
-2. Отправьте изменения в основную ветку для запуска пайплайна CI/CD.
-3. Выполните ручное или автоматическое развертывание (Helm) в локальной среде
-
-## Тестирование API с Postman
-Проект включает комплексный набор тестов Postman, которые можно запускать из командной строки с помощью Newman. 
-
-Тесты проверяют базовую функциональность всех сервисов в архитектуре.
-
-Покрытие тестами
--  сервис: Пользователи, Фильмы, Платежи, Подписки
-- Микросервис фильмов: Проверка работоспособности, Операции с фильмами
-- Микросервис событий: Проверка работоспособности, Публикация событий
-- Прокси-сервис: Проверка работоспособности, Проксирование запросов
-
-### Запуск тестов
-
-#### Предварительные требования
-
-- Node.js (v14 или выше)
-- npm (v6 или выше)
-- Newman (установлен через npm)
-
-#### Установка
-1. Перейдите в директорию тестов
-```bash
-cd tests/postman
-```
-2. Установите зависимости
-```bash
-npm install
-```
-3. Запуск тестов локально
-```bash
-npm run test:local
-```
-или
-```bash
-npm run test:docker
-```
-4. Запуск тестов с помощью shell-скрипта
-1. Сделайте скрипт исполняемым
-chmod +x run-tests.sh
-
-2. Запустите все тесты
-```bash
-./run-tests.sh -e local
-```
-или
-```bash
-./run-tests.sh -d -e docker
-```
-
-### Тестирование деплоя руками
-1. Тестирование с Docker Compose
-
-   Отправьте запросы к API Gateway:
-   ```bash
-   curl http://localhost:8000/api/movies
-   ```
-2. Протестируйте постепенный переход, изменив переменную окружения MOVIES_MIGRATION_PERCENT в файле docker-compose.yml.
-
-3. Проверьте топики Kafka и сообщения через Kafka UI по адресу http://localhost:8090
+For a detailed breakdown of the tasks and architectural decisions, please refer to the [Project Template](Project_template.md) and [ADRs](docs/adr).
