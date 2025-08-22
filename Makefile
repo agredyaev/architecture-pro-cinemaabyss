@@ -1,72 +1,96 @@
-.PHONY: up down test test-migration publish-events k8s-apply k8s-delete
+MAKEFLAGS += --no-print-directory
 
-up:
-	docker compose up --build -d
+GREEN := \033[32m
+RED := \033[31m
+YELLOW := \033[33m
+CYAN := \033[36m
+BOLD := \033[1m
+RESET := \033[0m
 
-down:
-	docker compose down
+ECHO_INFO = printf "$(CYAN)[INFO] %s$(RESET)\n"
+ECHO_WARN = printf "$(YELLOW)[WARN] %s$(RESET)\n"
+ECHO_OK   = printf "$(GREEN)[OK] %s$(RESET)\n"
+ECHO_ERR  = printf "$(RED)[ERROR] %s$(RESET)\n"
+ECHO_HDR  = printf "$(BOLD)$(CYAN)===== %s =====$(RESET)\n"
 
-test:
-	npm --prefix tests/postman run test:local
+.DEFAULT_GOAL := help
 
-test-migration:
-	@echo "--- Testing migration with 50% ---"
-	sed -i 's/MOVIES_MIGRATION_PERCENT: "100"/MOVIES_MIGRATION_PERCENT: "50"/' docker-compose.yml
-	make up
-	make test
-	@echo "--- Resetting migration to 100% ---"
-	sed -i 's/MOVIES_MIGRATION_PERCENT: "50"/MOVIES_MIGRATION_PERCENT: "100"/' docker-compose.yml
-	make down
+.PHONY: help
+help: ## Show this help message
+	@$(ECHO_HDR) "Available commands"
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-publish-events:
-	@echo "--- Publishing 3 of each event type ---"
-	for i in {1..3}; do \
-	  curl -X POST -H "Content-Type: application/json" -d '{"movie_id": '$i', "title": "Test Movie Event '$i'", "action": "viewed", "user_id": '$i'}' http://127.0.0.1:8082/api/events/movie; \
-	  curl -X POST -H "Content-Type: application/json" -d '{"user_id": '$i', "username": "testuser'$i'", "action": "logged_in", "timestamp": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"}' http://127.0.0.1:8082/api/events/user; \
-	  curl -X POST -H "Content-Type: application/json" -d '{"payment_id": '$i', "user_id": '$i', "amount": 9.99, "status": "completed", "timestamp": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'", "method_type": "credit_card"}' http://127.0.0.1:8082/api/events/payment; \
-	done
+.PHONY: up
+up: ## Start all services in detached mode
+	@$(ECHO_INFO) "Starting containers..."
+	@docker compose up --build -d
+	@$(ECHO_OK) "Containers started."
 
-# ====================================================================================
-# Kubernetes Targets
-# ====================================================================================
+.PHONY: down
+down: ## Stop and remove all services
+	@$(ECHO_INFO) "Stopping containers..."
+	@docker compose down
+	@$(ECHO_OK) "Containers stopped."
 
-k8s-apply:
-	@echo "--- Deploying CinemaAbyss to Kubernetes ---"
-	@echo "STEP 1: Applying namespace..."
-	kubectl apply -f src/kubernetes/namespace.yaml
-	@echo "STEP 2: IMPORTANT - Ensure you have a 'dockerconfigjson' secret. If not, create it first."
-	@# Example: kubectl create secret generic dockerconfigjson --from-file=.dockerconfigjson=config.json --type=kubernetes.io/dockerconfigjson -n cinemaabyss
-	@echo "STEP 3: Applying configs and secrets..."
-	kubectl apply -f src/kubernetes/configmap.yaml
-	kubectl apply -f src/kubernetes/secret.yaml
-	kubectl apply -f src/kubernetes/postgres-init-configmap.yaml
-	@echo "STEP 4: Deploying infrastructure (Postgres, Kafka)..."
-	kubectl apply -f src/kubernetes/postgres.yaml
-	kubectl apply -f src/kubernetes/kafka/kafka.yaml
-	@echo "STEP 5: Deploying application services..."
-	kubectl apply -f src/kubernetes/events-service.yaml
-	kubectl apply -f src/kubernetes/movies-service.yaml
-	kubectl apply -f src/kubernetes/monolith.yaml
-	kubectl apply -f src/kubernetes/proxy-service.yaml
-	@echo "STEP 6: Deploying ingress..."
-	kubectl apply -f src/kubernetes/ingress.yaml
-	@echo "--- Deployment finished ---"
+.PHONY: test
+test: ## Run Postman tests against the local environment
+	@$(ECHO_INFO) "Running Postman tests..."
+	@npm --prefix tests/postman run test:local
 
-k8s-delete:
-	@echo "--- Deleting CinemaAbyss from Kubernetes ---"
-	kubectl delete namespace cinemaabyss
-	@echo "--- Deletion finished ---"
+.PHONY: recreate-proxy
+recreate-proxy: ## Force recreate the proxy service
+	@$(ECHO_INFO) "Recreating proxy-service..."
+	@docker compose up -d --force-recreate proxy-service
+	@$(ECHO_OK) "Proxy service recreated."
 
-# ====================================================================================
-# Helm Targets
-# ====================================================================================
+.PHONY: run-load-test
+run-load-test: ## Run a load test with a given migration percentage (default: 0). Usage: make run-load-test PERCENT=50
+	@bash scripts/run-load-test.sh $(PERCENT)
 
-helm-install:
-	@echo "--- Deploying CinemaAbyss to Kubernetes using Helm ---"
-	helm upgrade --install cinemaabyss ./src/kubernetes/helm -n cinemaabyss --create-namespace
-	@echo "--- Deployment finished ---"
+.PHONY: test-migration
+test-migration: ## Run a full migration test suite (50%, 100%)
+	@bash scripts/migration-test.sh
 
-helm-delete:
-	@echo "--- Deleting CinemaAbyss from Kubernetes using Helm ---"
-	helm delete cinemaabyss -n cinemaabyss
-	@echo "--- Deletion finished ---"
+.PHONY: publish-events
+publish-events: ## Publish test events to Kafka
+	@bash scripts/publish-events.sh
+
+.PHONY: k8s-apply
+k8s-apply: ## Deploy the application to Kubernetes using raw manifests
+	@$(ECHO_HDR) "Deploying CinemaAbyss to Kubernetes"
+	@$(ECHO_INFO) "STEP 1: Applying namespace..."
+	@kubectl apply -f src/kubernetes/namespace.yaml
+	@$(ECHO_INFO) "STEP 2: Ensure you have a 'dockerconfigjson' secret if needed."
+	@$(ECHO_INFO) "STEP 3: Applying configs and secrets..."
+	@kubectl apply -f src/kubernetes/configmap.yaml
+	@kubectl apply -f src/kubernetes/secret.yaml
+	@kubectl apply -f src/kubernetes/postgres-init-configmap.yaml
+	@$(ECHO_INFO) "STEP 4: Deploying infrastructure (Postgres, Kafka)..."
+	@kubectl apply -f src/kubernetes/postgres.yaml
+	@kubectl apply -f src/kubernetes/kafka/kafka.yaml
+	@$(ECHO_INFO) "STEP 5: Deploying application services..."
+	@kubectl apply -f src/kubernetes/events-service.yaml
+	@kubectl apply -f src/kubernetes/movies-service.yaml
+	@kubectl apply -f src/kubernetes/monolith.yaml
+	@kubectl apply -f src/kubernetes/proxy-service.yaml
+	@$(ECHO_INFO) "STEP 6: Deploying ingress..."
+	@kubectl apply -f src/kubernetes/ingress.yaml
+	@$(ECHO_OK) "Deployment finished."
+
+.PHONY: k8s-delete
+k8s-delete: ## Delete the application from Kubernetes
+	@$(ECHO_INFO) "Deleting CinemaAbyss from Kubernetes..."
+	@kubectl delete namespace cinemaabyss
+	@$(ECHO_OK) "Deletion finished."
+
+.PHONY: helm-install
+helm-install: ## Deploy the application to Kubernetes using Helm
+	@$(ECHO_INFO) "Deploying CinemaAbyss to Kubernetes using Helm..."
+	@helm upgrade --install cinemaabyss ./src/kubernetes/helm -n cinemaabyss --create-namespace
+	@$(ECHO_OK) "Deployment finished."
+
+.PHONY: helm-delete
+helm-delete: ## Delete the application from Kubernetes using Helm
+	@$(ECHO_INFO) "Deleting CinemaAbyss from Kubernetes using Helm..."
+	@helm delete cinemaabyss -n cinemaabyss
+	@$(ECHO_OK) "Deletion finished."

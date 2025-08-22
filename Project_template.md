@@ -71,8 +71,8 @@
 
 **Артефакты:**
 
-*   [Скриншот Kafka UI](docs/artifacts/img/Screenshot%20From%202025-08-20%2019-54-56.png)
-*   [Скриншот тестов Postman](docs/artifacts/img/Screenshot%20From%202025-08-20%2020-14-05.png)
+![Скриншот Kafka UI](docs/artifacts/img/Screenshot%20From%202025-08-20%2019-54-56.png)
+![Скриншот тестов Postman](docs/artifacts/img/Screenshot%20From%202025-08-20%2020-14-05.png)
 
 
 ## Задание 3
@@ -279,6 +279,12 @@ cat .docker/config.json | base64
   Вы должны увидеть вывод списка фильмов
   Можно поэкспериментировать со значением   MOVIES_MIGRATION_PERCENT в src/kubernetes/configmap.yaml и убедится, что вызовы movies уходят полностью в новый сервис
 
+ ```bash
+ # Для проверки распределения нагрузки
+  make test-migration
+```
+
+
   12. Запустите тесты из папки tests/postman
   ```bash
    npm run test:kubernetes
@@ -289,6 +295,9 @@ cat .docker/config.json | base64
 #### Шаг 3
 Добавьте сюда скриншота вывода при вызове https://cinemaabyss.example.com/api/movies и  скриншот вывода event-service после вызова тестов.
 
+**Артефакты:**
+
+![Скришот proxy](docs/artifacts/img/Screenshot%20From%202025-08-22%2021-11-47.png)
 ![Скриншот movies](docs/artifacts/img/Screenshot%20From%202025-08-21%2001-06-21.png)
 ![Скриншот event-service](docs/artifacts/img/Screenshot%20From%202025-08-21%2001-07-39.png)
 
