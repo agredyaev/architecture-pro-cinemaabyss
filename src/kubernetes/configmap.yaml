@@ -17,3 +17,11 @@ data:
   # Strangler Fig configuration
   GRADUAL_MIGRATION: "true"
   MOVIES_MIGRATION_PERCENT: "100"
+
+  # Kafka configuration
+  KAFKA_BROKER: "kafka:9092"
+
+  # Service Ports
+  PROXY_SERVICE_PORT: "8000"
+  EVENTS_SERVICE_PORT: "8082"
+  EVENTS_SERVICE_URL: "http://events-service:8082"

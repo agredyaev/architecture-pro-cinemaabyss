@@ -1,0 +1,59 @@
+@startuml C4_Containers_Final
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+Person(user, "User", "Cinema customer")
+
+System_Boundary(cinema_abyss, "CinemaAbyss System (To-Be Architecture)") {
+    Container(spa, "Web App (SPA)", "JavaScript, React", "Client interface.")
+    Container(mobile_app, "Mobile App", "React Native", "Client interface.")
+    
+    Container(api_gateway, "API Gateway", "Go", "Single entry point for all API calls.")
+    
+    Container(movies_service, "Movies Service", "Go", "Manages movie metadata, ratings, and genres.")
+    ContainerDb(movies_db, "Movies DB", "PostgreSQL", "Stores movie information.")
+
+    Container(users_service, "Users Service", "Go", "Handles user authentication, authorization, and profiles.")
+    ContainerDb(users_db, "Users DB", "PostgreSQL", "Stores user data.")
+
+    Container(billing_service, "Billing Service", "Go", "Manages payments, subscriptions, and discounts.")
+    ContainerDb(billing_db, "Billing DB", "PostgreSQL", "Stores billing and subscription information.")
+    
+    Container(events_service, "Events Service", "Go", "Subscribes to events for notifications and other reactive logic.")
+    Container(kafka, "Message Broker", "Kafka", "Transport for asynchronous events.")
+}
+
+System_Ext(notification_service, "Notification Service", "External", "Sends emails and push notifications.")
+System_Ext(payment_system, "Payment System", "External", "Processes payments.")
+System_Ext(recommendation_system, "Recommendation System", "External", "Provides movie recommendations.")
+
+Rel(user, spa, "Uses", "HTTPS")
+Rel(user, mobile_app, "Uses")
+
+Rel(spa, api_gateway, "Calls API", "HTTPS/REST")
+Rel(mobile_app, api_gateway, "Calls API", "HTTPS/REST")
+
+' API Gateway Routing
+Rel(api_gateway, movies_service, "Routes '/api/movies/*' to", "HTTPS/REST")
+Rel(api_gateway, users_service, "Routes '/api/users/*' to", "HTTPS/REST")
+Rel(api_gateway, billing_service, "Routes '/api/billing/*' to", "HTTPS/REST")
+
+' Database Relations
+Rel(movies_service, movies_db, "Reads/Writes", "SQL/JDBC")
+Rel(users_service, users_db, "Reads/Writes", "SQL/JDBC")
+Rel(billing_service, billing_db, "Reads/Writes", "SQL/JDBC")
+
+' External System Integrations
+Rel(billing_service, payment_system, "Processes payments via", "HTTPS/REST")
+Rel(users_service, recommendation_system, "Gets recommendations via", "HTTPS/REST") ' Or this could be from movies_service
+
+' Asynchronous Event Flows
+Rel(movies_service, kafka, "Publishes 'MovieRated', 'MovieViewed' events", "Async, Kafka Topic")
+Rel(users_service, kafka, "Publishes 'UserRegistered' event", "Async, Kafka Topic")
+Rel(billing_service, kafka, "Publishes 'SubscriptionPaid' event", "Async, Kafka Topic")
+
+Rel(events_service, kafka, "Subscribes to events", "Async, Kafka Topic")
+Rel(events_service, notification_service, "Triggers notifications via", "HTTPS/REST")
+
+@enduml

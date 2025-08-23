@@ -5,7 +5,7 @@
 1. Спроектируйте to be архитектуру КиноБездны, разделив всю систему на отдельные домены и организовав интеграционное взаимодействие и единую точку вызова сервисов.
 Результат представьте в виде контейнерной диаграммы в нотации С4.
 Добавьте ссылку на файл в этот шаблон
-[ссылка на файл](ссылка)
+[ссылка на файл](docs/adr/001-target-microservice-architecture.md)
 
 
 ## Задание 2
@@ -45,7 +45,12 @@
    ```bash
    curl http://localhost:8000/api/movies
    ```
-- Протестируйте постепенный переход, изменив переменную окружения MOVIES_MIGRATION_PERCENT в файле docker-compose.yml.
+- Протестируйте постепенный переход, изменив переменную окружения MOVIES_MIGRATION_PERCENT в файле docker-compose.yml. 
+
+Для этого можно воспользоваться командой:
+  ```bash
+  make test-migration
+  ```
 
 ### 2. Kafka
  Вам как архитектуру нужно также проверить гипотезу насколько просто реализовать применение Kafka в данной архитектуре.
@@ -57,7 +62,17 @@
     - Добавьте в docker-compose новый сервис, kafka там уже есть
 
 Необходимые тесты для проверки этого API вызываются при запуске npm run test:local из папки tests/postman 
-Приложите скриншот тестов и скриншот состояния топиков Kafka http://localhost:8090 
+Приложите скриншот тестов и скриншот состояния топиков Kafka http://localhost:8090
+
+Для генерации тестовых событий можно воспользоваться командой:
+  ```bash
+  make publish-events
+  ```
+
+**Артефакты:**
+
+![Скриншот Kafka UI](docs/artifacts/img/Screenshot%20From%202025-08-20%2019-54-56.png)
+![Скриншот тестов Postman](docs/artifacts/img/Screenshot%20From%202025-08-20%2020-14-05.png)
 
 
 ## Задание 3
@@ -264,6 +279,12 @@ cat .docker/config.json | base64
   Вы должны увидеть вывод списка фильмов
   Можно поэкспериментировать со значением   MOVIES_MIGRATION_PERCENT в src/kubernetes/configmap.yaml и убедится, что вызовы movies уходят полностью в новый сервис
 
+ ```bash
+ # Для проверки распределения нагрузки
+  make test-migration
+```
+
+
   12. Запустите тесты из папки tests/postman
   ```bash
    npm run test:kubernetes
@@ -273,6 +294,12 @@ cat .docker/config.json | base64
 
 #### Шаг 3
 Добавьте сюда скриншота вывода при вызове https://cinemaabyss.example.com/api/movies и  скриншот вывода event-service после вызова тестов.
+
+**Артефакты:**
+
+![Скришот proxy](docs/artifacts/img/Screenshot%20From%202025-08-22%2021-11-47.png)
+![Скриншот movies](docs/artifacts/img/Screenshot%20From%202025-08-21%2001-06-21.png)
+![Скриншот event-service](docs/artifacts/img/Screenshot%20From%202025-08-21%2001-07-39.png)
 
 
 ## Задание 4
@@ -345,9 +372,15 @@ kubectl get pods -n cinemaabyss
 minikube tunnel
 ```
 
-Потом вызовите 
+Потом вызовите
 https://cinemaabyss.example.com/api/movies
 и приложите скриншот развертывания helm и вывода https://cinemaabyss.example.com/api/movies
+
+
+**Артефакты:**
+
+![Скриншот развертывания helm](docs/artifacts/img/Screenshot%20From%202025-08-21%2018-56-22.png)
+![Скриншот movies api](docs/artifacts/img/Screenshot%20From%202025-08-21%2018-58-05.png)
 
 
 # Задание 5
@@ -422,3 +455,7 @@ kubectl delete namespace istio-system
 kubectl delete all --all -n cinemaabyss
 kubectl delete namespace cinemaabyss
 ```
+**Артефакты:**
+
+![Скриншот1 circuit breaker'а](docs/artifacts/img/Screenshot%20From%202025-08-21%2022-34-23.png)
+![Скриншот1 circuit breaker'а](docs/artifacts/img/Screenshot%20From%202025-08-21%2022-34-41.png)

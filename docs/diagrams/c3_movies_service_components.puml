@@ -1,0 +1,30 @@
+@startuml C3_Movies_Service_Components
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+Container(api_gateway, "API Gateway", "Go", "Routes external requests to the Movies Service.")
+ContainerDb(movies_db, "Movies DB", "PostgreSQL", "Stores movie metadata, ratings, etc.")
+Container(kafka, "Message Broker", "Kafka", "Used for publishing domain events.")
+
+System_Boundary(movies_service, "Movies Service") {
+    Component(api_controller, "API Controller", "Go, Gin", "Handles incoming HTTP requests from the API Gateway.")
+    Component(movie_catalog, "Movie Catalog", "Go", "Manages the core business logic for movie metadata.")
+    Component(rating_manager, "Rating Manager", "Go", "Handles logic related to movie ratings and reviews.")
+    Component(event_publisher, "Event Publisher", "Go, Kafka Client", "Publishes events (e.g., 'MovieRated') to Kafka.")
+    Component(db_repository, "Database Repository", "Go, SQL", "Provides an interface for data access to the Movies DB.")
+}
+
+Rel(api_gateway, api_controller, "Forwards API requests to", "HTTPS/REST")
+
+Rel(api_controller, movie_catalog, "Uses")
+Rel(api_controller, rating_manager, "Uses")
+
+Rel(movie_catalog, db_repository, "Reads/writes data using", "SQL")
+Rel(rating_manager, db_repository, "Reads/writes data using", "SQL")
+
+Rel(rating_manager, event_publisher, "Sends events via")
+Rel(event_publisher, kafka, "Publishes events to", "Async")
+
+Rel(db_repository, movies_db, "Reads/writes to", "SQL")
+@enduml

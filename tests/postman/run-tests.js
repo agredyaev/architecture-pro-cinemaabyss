@@ -103,7 +103,7 @@ if (argv.folder) {
 // Run Newman
 console.log(`Running tests against ${argv.environment} environment...`);
 newman.run(newmanOptions, function (err, summary) {
-  if (err) { 
+  if (err) {
     console.error('Error running Newman:', err);
     process.exit(1);
   }

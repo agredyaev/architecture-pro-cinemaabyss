@@ -14,8 +14,15 @@ data:
   DB_USER: {{ .Values.database.user | quote }}
 
   # Service URLs
-  MONOLITH_URL: "http://monolith:{{ .Values.monolith.service.port }}"
-  MOVIES_SERVICE_URL: "http://movies:{{ .Values.moviesService.service.port }}"
+  MONOLITH_URL: "http://{{ .Values.services.monolith.name }}:{{ .Values.services.monolith.service.port }}"
+  MOVIES_SERVICE_URL: "http://{{ .Values.services.movies.name }}:{{ .Values.services.movies.service.port }}"
+  EVENTS_SERVICE_URL: "http://{{ .Values.services.events.name }}:{{ .Values.services.events.service.port }}"
+  PROXY_SERVICE_URL: "http://{{ .Values.services.proxy.name }}:{{ .Values.services.proxy.service.port }}"
+  KAFKA_BROKER: {{ .Values.kafka.broker | quote }}
+  MONOLITH_PORT: {{ .Values.services.monolith.env.PORT | quote }}
+  PROXY_SERVICE_PORT: {{ .Values.services.proxy.env.PORT | quote }}
+  MOVIES_SERVICE_PORT: {{ .Values.services.movies.env.PORT | quote }}
+  EVENTS_SERVICE_PORT: {{ .Values.services.events.env.PORT | quote }}
   
   # Strangler Fig configuration
   GRADUAL_MIGRATION: {{ .Values.config.gradualMigration | quote }}
